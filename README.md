@@ -52,6 +52,29 @@ Every state transition is heavily monitored and logged in CloudWatch Logs.
 - **Zero Cost**: Architected entirely within the AWS Free Tier.
 
 ## Architecture Overview
+
+```mermaid
+graph TD
+    Client[Client / Event Trigger] -->|Triggers Execution| SFN[AWS Step Functions]
+    
+    subgraph AWS Step Functions
+        SFN --> Start((Start))
+        Start --> GenerateJob[Generate Job Lambda]
+        GenerateJob --> ValidateJob[Validate Job Lambda]
+        ValidateJob --> ChoiceState{Choice: Is Valid?}
+        
+        ChoiceState -->|SUCCESS| SuccessLogger[Success Logger - DynamoDB]
+        ChoiceState -->|FAILED| FailureLogger[Failure Logger - DynamoDB]
+        
+        SuccessLogger --> End((End))
+        FailureLogger --> End
+    end
+    
+    GenerateJob -.-> CloudWatch[(CloudWatch Logs)]
+    ValidateJob -.-> CloudWatch
+    SFN -.-> CloudWatch
+```
+
 1. Client/Trigger -> AWS Step Functions
 2. Step Functions -> Invokes Job Generator (Lambda)
 3. Step Functions -> Invokes Validator (Lambda)
@@ -186,5 +209,5 @@ terraform destroy -auto-approve
 - Add Terraform remote state backend (S3 + DynamoDB lock) for team collaboration.
 
 ## Author
-**eng-imonmahmud**  
+**Imon Mahmud**  
 IT SPECIALIST | CLOUD INFRASTRUCTURE & AI AUTOMATION ENGINEER
